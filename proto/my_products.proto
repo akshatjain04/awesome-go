@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+option go_package = "my-products/product";
+
+package product;
+
+option java_multiple_files = true;
+option java_package = "com.bootexample4.products.grpc";
+option java_outer_classname = "ProductServiceProto";
+
+// Import Google's empty message type for responses that don't need to return data
+import "google/protobuf/empty.proto";
+
+// The product service definition
+service ProductService {
+  // Get all products
+  rpc GetAllProducts(google.protobuf.Empty) returns (ProductList) {}
+  
+  // Create a new product
+  rpc CreateProduct(Product) returns (Product) {}
+  
+  // Get a specific product by ID
+  rpc GetProduct(ProductId) returns (Product) {}
+  
+  // Update an existing product
+  rpc UpdateProduct(UpdateProductRequest) returns (Product) {}
+  
+  // Delete a product
+  rpc DeleteProduct(ProductId) returns (google.protobuf.Empty) {}
+}
+
+// Product message represents a product entity
+message Product {
+  // ID is optional in requests but always present in responses
+  optional int64 id = 1;
+  
+  // Required fields
+  string name = 2;
+  
+  // Optional fields
+  optional string description = 3;
+  double price = 4;
+}
+
+// Message for product list response
+message ProductList {
+  repeated Product products = 1;
+}
+
+// Message for product ID requests
+message ProductId {
+  int64 id = 1;
+}
+
+// Message for update requests
+message UpdateProductRequest {
+  int64 id = 1;
+  Product product = 2;
+}
