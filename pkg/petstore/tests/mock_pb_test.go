@@ -14,12 +14,12 @@ import (
 	"net"
 	"reflect"
 	"testing"
-	"time"
 
-	"github.com/avelino/awesome-go/pkg/petstore/generated"
-	mock "github.com/avelino/awesome-go/pkg/petstore/generated"
+	generated "github.com/avelino/awesome-go/pkg/petstore/generated"
+	"github.com/avelino/awesome-go/pkg/petstore/mock"
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
@@ -32,9 +32,9 @@ var lis *bufconn.Listener
 func init() {
 	lis = bufconn.Listen(bufSize)
 	s := grpc.NewServer()
-	mock.RegisterPetServiceServer(s, &mock.MockPetServiceServer{})
-	mock.RegisterStoreServiceServer(s, &mock.MockStoreServiceServer{})
-	mock.RegisterUserServiceServer(s, &mock.MockUserServiceServer{})
+	// generated.RegisterPetServiceServer(s, &generated.UnimplementedPetServiceServer{})
+	// generated.RegisterStoreServiceServer(s, &generated.UnimplementedStoreServiceServer{})
+	// generated.RegisterUserServiceServer(s, &generated.UnimplementedUserServiceServer{})
 	go func() {
 		if err := s.Serve(lis); err != nil {
 			panic("Server exited with error: " + err.Error())
@@ -92,7 +92,7 @@ func TestAddPet(t *testing.T) {
 			name:          "Nil pet",
 			inputPet:      nil,
 			expectedPet:   nil,
-			expectedError: status.Error(codes.InvalidArgument, "Pet cannot be nil"),
+			expectedError: status.Error(codes.Code(codes.InvalidArgument), "Pet cannot be nil"),
 		},
 		{
 			name: "Empty pet name",
@@ -101,7 +101,7 @@ func TestAddPet(t *testing.T) {
 				Name: "",
 			},
 			expectedPet:   nil,
-			expectedError: status.Error(codes.InvalidArgument, "Pet name cannot be empty"),
+			expectedError: status.Error(codes.Code(codes.InvalidArgument), "Pet name cannot be empty"),
 		},
 	}
 
@@ -114,11 +114,7 @@ func TestAddPet(t *testing.T) {
 				Return(tc.expectedPet, tc.expectedError).
 				Times(1)
 
-			conn := setupMockClient(t)
-			defer conn.Close()
-
-			client := generated.NewPetServiceClient(conn)
-			resp, err := client.AddPet(ctx, tc.inputPet)
+			resp, err := mockPetServiceClient.AddPet(ctx, tc.inputPet)
 
 			if err != nil {
 				if !errors.Is(err, tc.expectedError) {
