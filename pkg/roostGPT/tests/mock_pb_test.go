@@ -10,35 +10,22 @@ package mock_test
 
 import (
 	"context"
-	"errors"
-	"reflect"
+	"net"
 	"testing"
 	"time"
 
-	"github.com/avelino/awesome-go/pkg/roostGPT/generated"
+	generated "github.com/avelino/awesome-go/pkg/roostGPT/generated"
+	Mock "github.com/avelino/awesome-go/pkg/roostGPT/mock"
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const bufSize = 1024 * 1024
 
 var lis *bufconn.Listener
-
-func init() {
-	lis = bufconn.Listen(bufSize)
-	s := grpc.NewServer()
-	mock := NewMockRoostGPTServer(gomock.NewController(nil))
-	generated.RegisterRoostGPTServer(s, mock)
-	go func() {
-		if err := s.Serve(lis); err != nil {
-			panic("Server exited with error: " + err.Error())
-		}
-	}()
-}
 
 func bufDialer(context.Context, string) (grpc.ClientConnInterface, error) {
 	return grpc.DialContext(context.Background(), "bufnet", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
@@ -50,27 +37,27 @@ func TestAbortTestExecute(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockRoostGPTClient := NewMockRoostGPTClient(ctrl)
+	mockRoostGPTClient := Mock.NewMockRoostGPTClient(ctrl)
 
 	tests := []struct {
 		name           string
 		input          *generated.AbortTestExecuteRequest
-		mockReturn     *emptypb.Empty
+		mockReturn     *generated.Empty
 		mockError      error
 		expectedError  bool
 		expectedStatus codes.Code
 	}{
 		{
 			name:           "Happy path",
-			input:          &generated.AbortTestExecuteRequest{TestId: "123"},
-			mockReturn:     &emptypb.Empty{},
+			input:          &generated.AbortTestExecuteRequest{TriggerId: "123"},
+			mockReturn:     &generated.Empty{},
 			mockError:      nil,
 			expectedError:  false,
 			expectedStatus: codes.OK,
 		},
 		{
 			name:           "Invalid test ID",
-			input:          &generated.AbortTestExecuteRequest{TestId: ""},
+			input:          &generated.AbortTestExecuteRequest{TriggerId: ""},
 			mockReturn:     nil,
 			mockError:      status.Error(codes.InvalidArgument, "Invalid test ID"),
 			expectedError:  true,
@@ -78,7 +65,7 @@ func TestAbortTestExecute(t *testing.T) {
 		},
 		{
 			name:           "Server error",
-			input:          &generated.AbortTestExecuteRequest{TestId: "123"},
+			input:          &generated.AbortTestExecuteRequest{TriggerId: "123"},
 			mockReturn:     nil,
 			mockError:      status.Error(codes.Internal, "Server error"),
 			expectedError:  true,
@@ -114,4 +101,3 @@ func TestAbortTestExecute(t *testing.T) {
 // Additional test functions for other endpoints should follow the same pattern as above.
 // For brevity, they are not included here, but you should implement them similarly,
 // one function per endpoint, using table-driven tests as shown.
-
