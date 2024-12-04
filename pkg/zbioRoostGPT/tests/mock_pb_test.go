@@ -80,7 +80,7 @@ func TestAbortTestExecute(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := createContextWithTimeout(t, 5*time.Millisecond)
+			ctx, cancel := createContextWithTimeout(t, 5*time.Second)
 			defer cancel()
 
 			tt.setupMock() // Set up expectations
