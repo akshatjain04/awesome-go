@@ -14,6 +14,7 @@ import (
 	"time"
 
 	generated "github.com/avelino/awesome-go/pkg/zbioRoostGPT/generated"
+	mock "github.com/avelino/awesome-go/pkg/zbioRoostGPT/mock"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
 	status "google.golang.org/grpc/status"
@@ -31,7 +32,7 @@ func TestAbortTestExecute(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockClient := NewMockRoostGPTClient(ctrl)
+	mockClient := mock.NewMockRoostGPTClient(ctrl)
 
 	tests := []struct {
 		name          string
@@ -69,7 +70,7 @@ func TestAbortTestExecute(t *testing.T) {
 					AbortTestExecute(gomock.Any(), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, req *generated.AbortTestExecuteRequest, opts ...grpc.CallOption) (*generated.Empty, error) {
 						<-ctx.Done()
-						return nil, ctx.Err()
+						return nil, status.Error(codes.DeadlineExceeded, ctx.Err().Error())
 					})
 			},
 			wantErr:       true,
