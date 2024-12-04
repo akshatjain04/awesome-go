@@ -14,6 +14,7 @@ import (
 	"time"
 
 	generated "github.com/avelino/awesome-go/pkg/zbioRoostGPT/generated"
+	mock "github.com/avelino/awesome-go/pkg/zbioRoostGPT/mock"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
 	status "google.golang.org/grpc/status"
@@ -31,7 +32,7 @@ func TestAbortTestExecute(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockClient := NewMockRoostGPTClient(ctrl)
+	mockClient := mock.NewMockRoostGPTClient(ctrl)
 
 	tests := []struct {
 		name          string
@@ -42,7 +43,7 @@ func TestAbortTestExecute(t *testing.T) {
 	}{
 		{
 			name:  "Happy path",
-			input: &generated.AbortTestExecuteRequest{},
+			input: &generated.AbortTestExecuteRequest{TriggerId: "test-123"},
 			setupMock: func() {
 				mockClient.EXPECT().
 					AbortTestExecute(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -63,13 +64,13 @@ func TestAbortTestExecute(t *testing.T) {
 		},
 		{
 			name:  "Timeout exceeded",
-			input: &generated.AbortTestExecuteRequest{},
+			input: &generated.AbortTestExecuteRequest{TriggerId: "test-123"},
 			setupMock: func() {
 				mockClient.EXPECT().
 					AbortTestExecute(gomock.Any(), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, req *generated.AbortTestExecuteRequest, opts ...grpc.CallOption) (*generated.Empty, error) {
 						<-ctx.Done()
-						return nil, ctx.Err()
+						return nil, status.Error(codes.DeadlineExceeded, ctx.Err().Error())
 					})
 			},
 			wantErr:       true,
@@ -79,7 +80,7 @@ func TestAbortTestExecute(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := createContextWithTimeout(t, 5*time.Second)
+			ctx, cancel := createContextWithTimeout(t, 5*time.Millisecond)
 			defer cancel()
 
 			tt.setupMock() // Set up expectations
