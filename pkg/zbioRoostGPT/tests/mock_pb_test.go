@@ -43,7 +43,7 @@ func TestAbortTestExecute(t *testing.T) {
 	}{
 		{
 			name:  "Happy path",
-			input: &generated.AbortTestExecuteRequest{TriggerId: "test-123"},
+			input: &generated.AbortTestExecuteRequest{},
 			setupMock: func() {
 				mockClient.EXPECT().
 					AbortTestExecute(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -64,7 +64,7 @@ func TestAbortTestExecute(t *testing.T) {
 		},
 		{
 			name:  "Timeout exceeded",
-			input: &generated.AbortTestExecuteRequest{TriggerId: "test-123"},
+			input: &generated.AbortTestExecuteRequest{},
 			setupMock: func() {
 				mockClient.EXPECT().
 					AbortTestExecute(gomock.Any(), gomock.Any(), gomock.Any()).
