@@ -1,0 +1,401 @@
+syntax = "proto3";
+
+package roost.api.v1;
+option go_package = "github.com/roostGPT/api/v1;roostGPT";
+
+
+import "google/protobuf/timestamp.proto";
+
+// Service definition
+service RoostGPT {
+  // Test operations
+  rpc GetAllTests (GetAllTestsRequest) returns (GetAllTestsResponse);
+  rpc AddTest (AddTestRequest) returns (TestGptEntity);
+  rpc GetOneTest (GetOneTestRequest) returns (TestGptEntity);
+  rpc EditTest (EditTestRequest) returns (TestGptEntity);
+  rpc DeleteTest (DeleteTestRequest) returns (Empty);
+  rpc TriggerTest (TriggerTestRequest) returns (Empty);
+
+  // Event operations
+  rpc GetAllEvents (GetAllEventsRequest) returns (GetAllEventsResponse);
+  rpc GetOneEvent (GetOneEventRequest) returns (Event);
+  rpc EditTriggerEvent (EditTriggerEventRequest) returns (Empty);
+  rpc AbortTrigger (AbortTriggerRequest) returns (Empty);
+  rpc ExecuteTest (ExecuteTestRequest) returns (Empty);
+  rpc AbortTestExecute (AbortTestExecuteRequest) returns (Empty);
+  rpc GetTestExecutionReport (GetTestExecutionReportRequest) returns (TestExecutionReport);
+  rpc GetTestExecutionFileStatus (GetTestExecutionFileStatusRequest) returns (TestExecutionFileStatus);
+  rpc GetLogs (GetLogsRequest) returns (GetLogsResponse);
+  rpc RetriggerTest (RetriggerTestRequest) returns (Empty);
+}
+
+// Common messages
+message Empty {}
+
+message TitleKeyPair {
+  string title = 1;
+  string key = 2;
+}
+
+message FileContent {
+  string file_name = 1;
+  string file_path = 2;
+  string file_content = 3;
+}
+
+message FileConfig {
+  string file_name = 1;
+  string file_content = 2;
+}
+
+// Test related messages
+message TestGptEntity {
+  string id = 1;
+  string user_id = 2;
+  string thirdparty_app_id = 3;
+  string test_name = 4;
+  string git_info = 5;
+  string ai_model_info = 6;
+  string integration_info = 7;
+  string additional_info = 8;
+  string trigger_events = 9;
+  google.protobuf.Timestamp created_on = 10;
+  google.protobuf.Timestamp updated_on = 11;
+  int32 deleted = 12;
+  int32 test_timeout = 13;
+  string webhook_error = 14;
+  string test_framework = 15;
+  string git_type = 16;
+  string source_repo = 17;
+  string source_branch = 18;
+  string connector_ids = 19;
+  int32 git_ops = 20;
+  string labels = 21;
+  string test_source = 22;
+}
+
+message AddTestRequest {
+  string app_id = 1;
+  string test_name = 2;
+  string git_type = 3;
+  TestAiModelInfo ai_model_info = 4;
+  TestGitInfo git_info = 5;
+  TestIntegrationInfo integration_info = 6;
+  TestAdditionalInfo additional_info = 7;
+  int32 test_timeout = 8;
+  bool git_ops = 9;
+  repeated string trigger_events = 10;
+  string source_branch = 11;
+  string source_repo = 12;
+  string test_framework = 13;
+}
+
+message TestAiModelInfo {
+  enum ModelType {
+    OPENAI = 0;
+    VERTEXAI = 1;
+    DBRX = 2;
+    AZURE_OPEN_AI = 3;
+    OPEN_SOURCE_MODEL = 4;
+    CLAUDE_AI_MODEL = 5;
+    LLAMA_MODEL = 6;
+    STAR_CHAT_AI = 7;
+  }
+  ModelType selected_model = 1;
+  string access_token = 2;
+  double ai_temperature = 3;
+  TitleKeyPair vertex_model = 4;
+  IpModelNamePair open_source_model_info = 5;
+  TitleKeyPair claude_model = 6;
+  IpModelNamePair star_chat_info = 7;
+  IpModelNamePair llama_model_info = 8;
+  DbrxModelInfo dbrx_info = 9;
+  AzureModelInfo azure_model_info = 10;
+  string vertex_endpoint = 11;
+  string vertex_project_id = 12;
+  string vertex_type = 13;
+  string connector_id = 14;
+  string gpt_model = 15;
+}
+
+message IpModelNamePair {
+  string ip = 1;
+  string model_name = 2;
+}
+
+message DbrxModelInfo {
+  string dbrx_model_name = 1;
+  string dbrx_auth_token = 2;
+  string dbrx_model_endpoint = 3;
+}
+
+message AzureModelInfo {
+  string azure_deployment_name = 1;
+  string azure_endpoint = 2;
+  string azure_openai_key = 3;
+}
+
+message TestGitInfo {
+  GitSourceRepo source = 1;
+  GitTargetRepo target = 2;
+  string type = 3;
+  bool source_repo_pr = 4;
+  string selected_path = 5;
+  string host_type = 6;
+  int32 max_depth = 7;
+  string user_ip = 8;
+}
+
+message GitSourceRepo {
+  string access_token = 1;
+  string selected_branch = 2;
+  string repository_type = 3;
+  GitSelectedRepo selected_repo = 4;
+  string connector_id = 5;
+  string org_name = 6;
+  string username = 7;
+  string application_entrypoint = 8;
+  string public_repo_url = 9;
+}
+
+message GitTargetRepo {
+  string access_token = 1;
+  string selected_branch = 2;
+  GitSelectedRepo selected_repo = 3;
+  string connector_id = 4;
+  string org_name = 5;
+  string username = 6;
+}
+
+message GitSelectedRepo {
+  string key = 1;
+  string title = 2;
+  string id = 3;
+  string owner = 4;
+  string default_branch = 5;
+  string project_id = 6;
+  string project_name = 7;
+}
+
+message TestIntegrationInfo {
+  enum IntegrationType {
+    NONE = 0;
+    JIRA = 1;
+    AZURE = 2;
+  }
+  IntegrationType type = 1;
+  string jira_email = 2;
+  string jira_host_name = 3;
+  string jira_id = 4;
+  string jira_password = 5;
+  string azure_org = 6;
+  string azure_project = 7;
+  string azure_project_id = 8;
+  string azure_token = 9;
+  string azure_work_item_id = 10;
+  string connector_id = 11;
+}
+
+message TestAdditionalInfo {
+  string language = 1;
+  string iterations = 2;
+  string test_type = 3;
+  string log_type = 4;
+  FileContent log_file = 5;
+  DependencyVersions dependency_versions = 6;
+  ApiSpec api_spec = 7;
+  ApiSpec behavioural_test = 8;
+  repeated AppEnvConfig env_config = 9;
+  string functions_to_test = 10;
+  repeated string http_filters = 11;
+  EmailConfig email_config = 12;
+  SlackConfig slack_config = 13;
+  MsTeamsConfig ms_teams_config = 14;
+  CloudWatchConfig cloudwatch_config = 15;
+  bool create_api_spec = 16;
+  string custom_prompt = 17;
+  repeated string custom_tags = 18;
+}
+
+message DependencyVersions {
+  TitleKeyPair java_version = 1;
+  TitleKeyPair python_version = 2;
+  TitleKeyPair node_version = 3;
+  TitleKeyPair go_version = 4;
+  TitleKeyPair cpp_version = 5;
+  TitleKeyPair dotnet_version = 6;
+  TitleKeyPair gradle_version = 7;
+  TitleKeyPair maven_version = 8;
+}
+
+message ApiSpec {
+  string type = 1;
+  string source_type = 2;
+  repeated string url = 3;
+  repeated string gitpath = 4;
+  repeated FileContent file_content = 5;
+}
+
+message AppEnvConfig {
+  string key = 1;
+  string value = 2;
+  string type = 3;
+  bool secret = 4;
+  bool file = 5;
+  FileConfig file_details = 6;
+}
+
+message EmailConfig {
+  bool invite_all = 1;
+  repeated string invite_rooster_emails = 2;
+}
+
+message SlackConfig {
+  TitleKeyPair slack_channel = 1;
+  string slack_channel_id = 2;
+  string slack_token = 3;
+}
+
+message MsTeamsConfig {
+  TitleKeyPair ms_teams_name = 1;
+  TitleKeyPair ms_teams_channel = 2;
+  string ms_teams_tenant_id = 3;
+}
+
+message CloudWatchConfig {
+  bool enabled = 1;
+  AwsCredentials cw_credentials = 2;
+  string cw_log_group_name = 3;
+  string cw_region = 4;
+}
+
+message AwsCredentials {
+  bool enabled = 1;
+  string credentials_input_type = 2;
+  string access_key_id = 3;
+  string secret_access_key = 4;
+  string session_token = 5;
+  FileConfig credentials_file = 6;
+  bool use_admin_creds = 7;
+}
+
+// Request/Response messages
+message GetAllTestsRequest {
+  bool get_for_all = 1;
+  string search_term = 2;
+  string take = 3;
+  string skip = 4;
+  repeated string label_filter = 5;
+}
+
+message GetAllTestsResponse {
+  repeated TestGptEntity tests = 1;
+}
+
+message GetOneTestRequest {
+  string test_id = 1;
+}
+
+message EditTestRequest {
+  string test_id = 1;
+  TestGptEntity test = 2;
+}
+
+message DeleteTestRequest {
+  string test_id = 1;
+}
+
+message TriggerTestRequest {
+  string test_id = 1;
+}
+
+message GetAllEventsRequest {
+  string search_term = 1;
+  string take = 2;
+  string skip = 3;
+  string test_id = 4;
+  repeated string status_filter = 5;
+  string order_by = 6;
+  string time_filter = 7;
+  repeated string label_filter = 8;
+}
+
+message GetAllEventsResponse {
+  repeated Event events = 1;
+}
+
+message Event {
+  string id = 1;
+  string status = 2;
+  string status_details = 3;
+  google.protobuf.Timestamp completion_time = 4;
+  google.protobuf.Timestamp modification_time = 5;
+  string test_endpoints = 6;
+  string test_report = 7;
+}
+
+message GetOneEventRequest {
+  string trigger_id = 1;
+}
+
+message EditTriggerEventRequest {
+  string trigger_id = 1;
+  Event event = 2;
+}
+
+message AbortTriggerRequest {
+  string trigger_id = 1;
+}
+
+message ExecuteTestRequest {
+  string trigger_id = 1;
+  string target_url = 2;
+  repeated string file_path = 3;
+  string csv_file_path = 4;
+  string endpoint = 5;
+  int32 arrival_rate = 6;
+  int32 duration = 7;
+  int32 status_code = 8;
+  string test_framework = 9;
+  repeated AppEnvConfig env_config = 10;
+}
+
+message AbortTestExecuteRequest {
+  string trigger_id = 1;
+}
+
+message GetTestExecutionReportRequest {
+  string trigger_id = 1;
+  string file_choice = 2;
+  string file_path = 3;
+}
+
+message TestExecutionReport {
+  string report_content = 1;
+}
+
+message GetTestExecutionFileStatusRequest {
+  string trigger_id = 1;
+  string file_path = 2;
+}
+
+message TestExecutionFileStatus {
+  string status = 1;
+}
+
+message GetLogsRequest {
+  string trigger_id = 1;
+}
+
+message GetLogsResponse {
+  string logs = 1;
+}
+
+message RetriggerTestRequest {
+  string trigger_id = 1;
+  bool improve_test = 2;
+  repeated string file_path = 3;
+  string user_content = 4;
+  string testscript_endpoint = 5;
+  string git_pr_url = 6;
+}
