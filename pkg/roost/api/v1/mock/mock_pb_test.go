@@ -14,17 +14,16 @@ import (
 	"time"
 
 	generated "github.com/avelino/awesome-go/pkg/roost/api/v1/generated"
+	mock "github.com/avelino/awesome-go/pkg/roost/api/v1/mock"
 	gomock "github.com/golang/mock/gomock"
-	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 )
 
-// Helper function to setup a gRPC client mock and server mock
-func setup(t *testing.T) (*MockRoostGPTClient, *MockRoostGPTServer, func()) {
+func setup(t *testing.T) (*mock.MockRoostGPTClient, *mock.MockRoostGPTServer, func()) {
 	ctrl := gomock.NewController(t)
-	client := NewMockRoostGPTClient(ctrl)
-	server := NewMockRoostGPTServer(ctrl)
+	client := mock.NewMockRoostGPTClient(ctrl)
+	server := mock.NewMockRoostGPTServer(ctrl)
 	cleanup := func() {
 		ctrl.Finish()
 	}
@@ -44,7 +43,7 @@ func TestAbortTestExecute(t *testing.T) {
 	}{
 		{
 			name:      "Happy path",
-			request:   &generated.AbortTestExecuteRequest{Id: "test-id"},
+			request:   &generated.AbortTestExecuteRequest{TriggerId: "test-id"},
 			wantError: false,
 		},
 		{
@@ -55,7 +54,7 @@ func TestAbortTestExecute(t *testing.T) {
 		},
 		{
 			name:      "Server error",
-			request:   &generated.AbortTestExecuteRequest{Id: "test-id"},
+			request:   &generated.AbortTestExecuteRequest{TriggerId: "test-id"},
 			wantError: true,
 			errorCode: codes.Internal,
 		},
@@ -66,25 +65,37 @@ func TestAbortTestExecute(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 			defer cancel()
 
+			// Set up expectations on the server mock
 			if tt.wantError {
-				server.EXPECT().AbortTestExecute(ctx, tt.request).Return(nil, status.Error(tt.errorCode, "error"))
+				server.EXPECT().AbortTestExecute(gomock.Any(), tt.request).Return(nil, status.Error(tt.errorCode, "error"))
 			} else {
-				server.EXPECT().AbortTestExecute(ctx, tt.request).Return(&generated.Empty{}, nil)
+				server.EXPECT().AbortTestExecute(gomock.Any(), tt.request).Return(&generated.Empty{}, nil)
 			}
 
-			response, err := client.AbortTestExecute(ctx, tt.request)
+			// Set up expectations on the client mock
 			if tt.wantError {
-				if err == nil {
+				client.EXPECT().AbortTestExecute(gomock.Any(), tt.request).Return(nil, status.Error(tt.errorCode, "error"))
+			} else {
+				client.EXPECT().AbortTestExecute(gomock.Any(), tt.request).Return(&generated.Empty{}, nil)
+			}
+
+			serverResponse, serverRequestErr := server.AbortTestExecute(ctx, tt.request)
+			clientResponse, clientRequestErr := client.AbortTestExecute(ctx, tt.request)
+			if tt.wantError {
+				if serverRequestErr == nil || clientRequestErr == nil {
 					t.Errorf("AbortTestExecute() expected error, got none")
-				} else if s, _ := status.FromError(err); s.Code() != tt.errorCode {
+				} else if s, _ := status.FromError(serverRequestErr); s.Code() != tt.errorCode {
 					t.Errorf("AbortTestExecute() expected error code %v, got %v", tt.errorCode, s.Code())
 				}
 			} else {
-				if err != nil {
-					t.Errorf("AbortTestExecute() unexpected error: %v", err)
+				if serverRequestErr != nil {
+					t.Errorf("AbortTestExecute() unexpected error: %v", serverRequestErr)
 				}
-				if response == nil {
-					t.Errorf("AbortTestExecute() expected non-nil response, got nil")
+				if serverResponse == nil {
+					t.Errorf("AbortTestExecute() expected non-nil serverResponse, got nil")
+				}
+				if clientResponse == nil {
+					t.Errorf("AbortTestExecute() expected non-nil clientResponse, got nil")
 				}
 			}
 		})
